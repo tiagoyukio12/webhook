@@ -2,7 +2,7 @@ import json
 import calendar
 
 import matplotlib.pyplot as plt
-from app.TCC2019 import info_vis
+from app.infovis import info_vis
 
 from app import app
 from flask import request, jsonify, send_file
