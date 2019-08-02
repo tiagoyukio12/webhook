@@ -3,40 +3,23 @@
     "fulfillmentMessages": [
         {
             "image": {
-                "imageUri": "https://i.imgur.com/hR4v2rZ.gif",
-                "accessibilityText": "texto acessibilidade"
-            }
-        },
-        {
-            "card": {
-                "title": "Gráfico",
-                "subtitle": "Consumo diário",
                 "imageUri": "https://i.imgur.com/hR4v2rZ.gif"
-            }
+            },
+            "platform": "ACTIONS_ON_GOOGLE"
         },
         {
-            "payload": {
-                "google": {
-                    "expectUserResponse": true,
-                    "richResponse": {
-                        "items": [
-                            {
-                                "simpleResponse": {
-                                    "textToSpeech": "Você consumiu 10 kWh"
-                                }
-                            },
-                            {
-                                "basicCard": {
-                                    "image": {
-                                        "url": "https://i.imgur.com/hR4v2rZ.gif",
-                                        "accessibilityText": "Image alternate text"
-                                    }
-                                }
-                            }
-                        ]
-                    }
-                }
-            }
+            "image": {
+                "imageUri": "https://i.imgur.com/hR4v2rZ.gif"
+            },
+            "platform": "FACEBOOK"
+        },
+        {
+            "text": {
+                "text": [
+                    "mensagem no face"
+                ]
+            },
+            "platform": "FACEBOOK"
         }
     ]
 }

@@ -24,8 +24,6 @@ def post():
 
     cons = info_vis.qry_cons_aggr(start_date, end_date, 'M')
 
-    fulfillmentText = 'Você consumiu {} kWh de {} a {}'.format(cons.energy.iloc[0], start_date, end_date)
-
     # Plot query results
     fig, ax = plt.subplots()
     month_names = cons.t.dt.month.apply(lambda x: calendar.month_abbr[x])  # convert month numbers to names
@@ -42,17 +40,21 @@ def post():
         height = rect.get_height()
         ax.text(rect.get_x() - 0.05 + rect.get_width()/2, height - 30, label,
                 ha='center', va='bottom', weight = 'bold')
-
     fig.set_size_inches(12, 6)
     plt.savefig('./app/plot' + data['responseId'] + '.png')
 
+    # Load json response
     file_handler = open('./app/response.json', 'r')
     response = json.loads(file_handler.read())
+    fulfillmentText = 'Você consumiu {} kWh de {} a {}'.format(cons.energy.iloc[0], start_date, end_date)
     response['fulfillmentText'] = fulfillmentText
+    response['fulfillmentMessages'][2]['text']['text'][0] = fulfillmentText
 
+    # Create media file url
     url = request.url_root + 'media?file=' + 'plot' + data['responseId'] + '.png'
     response['fulfillmentMessages'][0]['image']['imageUri'] = url
-    
+    response['fulfillmentMessages'][1]['image']['imageUri'] = url  # FIXME: image from ngrok doesn't load in facebook
+
     return jsonify(response)
 
 def format_date(date):
