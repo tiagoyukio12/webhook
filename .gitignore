@@ -108,4 +108,5 @@ venv.bak/
 *.gif
 
 # dataset files
-# *.csv
+*.csv
+*.txt
