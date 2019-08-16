@@ -3,23 +3,68 @@
     "fulfillmentMessages": [
         {
             "image": {
-                "imageUri": "https://i.imgur.com/hR4v2rZ.gif"
-            },
-            "platform": "ACTIONS_ON_GOOGLE"
+                "imageUri": "https://res.cloudinary.com/dqmfcku4a/image/upload/plot.png"
+            }
         },
         {
             "image": {
-                "imageUri": "https://i.imgur.com/hR4v2rZ.gif"
+                "imageUri": "https://res.cloudinary.com/dqmfcku4a/image/upload/plot.png"
             },
             "platform": "FACEBOOK"
         },
         {
             "text": {
                 "text": [
-                    "mensagem no face"
+                    "Você consumiu..."
                 ]
             },
             "platform": "FACEBOOK"
+        },
+        {
+            "platform": "ACTIONS_ON_GOOGLE",
+            "simpleResponses": {
+                "simpleResponses": [
+                    {
+                        "textToSpeech": "Você consumiu..."
+                    }
+                ]
+            }
+        },
+        {
+            "platform": "ACTIONS_ON_GOOGLE",
+            "basicCard": {
+                "image": {
+                    "imageUri": "https://res.cloudinary.com/dqmfcku4a/image/upload/plot.png",
+                    "accessibilityText": "gráfico de consumo"
+                }
+            }
+        },
+        {
+            "platform": "ACTIONS_ON_GOOGLE",
+            "suggestions": {
+                "suggestions": [
+                    {
+                        "title": "Como posso economizar?"
+                    },
+                    {
+                        "title": "Quanto vou pagar no mês?"
+                    }
+                ]
+            }
+        },
+        {
+            "image": {
+                "imageUri": "https://res.cloudinary.com/dqmfcku4a/image/upload/plot.png"
+            },
+            "platform": "LINE"
+        },
+        {
+            "text": {
+                "text": [
+                    "Você consumiu..."
+                ]
+            },
+            "platform": "LINE"
         }
     ]
 }
