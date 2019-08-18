@@ -1,7 +1,16 @@
 import operator
+
+import cloudinary
+import cloudinary.uploader
+cloudinary.config(
+    cloud_name='dqmfcku4a',
+    api_key='986962262222677',
+    api_secret='lbTxe9ZAZsbVZJjfLJ_TgJla4aQ'
+)
 import numpy as np
 import pandas as pd
-from app.infovis import load_house
+
+from load_house import load_house
 
 
 channels, labels = load_house.SMART('2016')
@@ -120,13 +129,20 @@ def qry_cons_aggr(start, end, frequency):
     """
     
     period_days = 1
+    t = -1
     if frequency == 'W':
         period_days = 7
     if frequency == 'M':  # TODO: Fix monthly period
-        period_days = 30
+        periods = 0
+        t = [pd.to_datetime(start)]
+        while t[-1] + pd.offsets.MonthBegin(1) < pd.to_datetime(end):
+            t.append(t[-1] + pd.offsets.MonthBegin(1))
+            periods += 1
+        t = pd.DatetimeIndex(t)
+    else:
+        periods = (pd.to_datetime(end) - pd.to_datetime(start)).days / period_days
+        t = pd.date_range(start, periods=periods, freq='{}D'.format(period_days))
     
-    periods = (pd.to_datetime(end) - pd.to_datetime(start)).days / period_days
-    t = pd.date_range(start, periods=periods, freq='{}D'.format(period_days))
     cons = pd.DataFrame(0, index=np.arange(periods), columns=['cons'])
     aggr_cons = pd.DataFrame([t, cons]).transpose()
     aggr_cons.columns = ['t', 'energy']
@@ -149,11 +165,10 @@ def qry_cons_aggr(start, end, frequency):
         cons.fillna(0)
         
         # Convert to kWh
-        period_hours = 24 * period_days
+        period_hours = 24 * period_days #TODO: fix for months
         cons.energy = cons.energy * period_hours / 1e3
         
         aggr_cons['energy'] += cons.energy
-    
     return aggr_cons
 
 
@@ -206,3 +221,37 @@ def qry_total_cons_all(start, end, percentage=False):
     sorted_list = list(map(list, zip(*sorted_list)))
 
     return sorted_list
+
+
+def plot_cons(cons, file_name):
+    # Plot query results
+    fig, ax = plt.subplots()
+    month_names = cons.t.dt.month.apply(
+        lambda x: calendar.month_abbr[x])  # convert month numbers to names
+    plt.bar(month_names, cons.energy, width=0.9, color='lightgreen')
+    plt.ylabel('Consumo [kWh]')
+    ax.set_yticklabels([])  # hide tick labels
+    ax.tick_params(axis=u'both', which=u'both', length=0)  # hide tick marks
+    plt.margins(x=0)  # remove white space
+
+    # Add values at the top of each bar
+    rects = ax.patches
+    bar_labels = ["{:5.0f}".format(cons.iloc[i].energy)
+                  for i in range(len(rects))]
+    for rect, label in zip(rects, bar_labels):
+        height = rect.get_height()
+        ax.text(rect.get_x() - 0.05 + rect.get_width()/2, height - 30, label,
+                ha='center', va='bottom', weight='bold')
+    fig.set_size_inches(12, 6)
+    plt.savefig('./app/' + file_name + '.png')
+    cloudinary.uploader.upload(
+        './app/' + file_name + '.png', public_id=file_name)
+
+
+def main():
+    cons = qry_cons_aggr('2019-01-01', '2019-12-31', 'M')
+    plot_cons(cons, 'foo')
+
+
+if __name__ == '__main__':
+    main()

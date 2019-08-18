@@ -1,17 +1,9 @@
 from flask import request, jsonify, send_file
 from app import app
-from app.infovis import info_vis
+from infovis import info_vis
 import matplotlib.pyplot as plt
 import json
 import calendar
-
-import cloudinary
-import cloudinary.uploader
-cloudinary.config(
-    cloud_name='dqmfcku4a',
-    api_key='986962262222677',
-    api_secret='lbTxe9ZAZsbVZJjfLJ_TgJla4aQ'
-)
 
 
 @app.route('/', methods=['POST'])
@@ -30,7 +22,6 @@ def post():
             # Parameter received is a period
             start_date = format_date(
                 data['queryResult']['parameters']['date-period']['startDate'])
-            print(start_date)
             end_date = format_date(
                 data['queryResult']['parameters']['date-period']['endDate'])
 
@@ -95,4 +86,5 @@ def plot_cons(cons, file_name):
                 ha='center', va='bottom', weight='bold')
     fig.set_size_inches(12, 6)
     plt.savefig('./app/' + file_name + '.png')
-    cloudinary.uploader.upload('./app/' + file_name + '.png', public_id=file_name)
+    cloudinary.uploader.upload(
+        './app/' + file_name + '.png', public_id=file_name)
