@@ -31,7 +31,7 @@ def post():
         file_handler = open('./app/response.json', 'r')
         response = json.loads(file_handler.read())
         fulfillmentText = 'Você consumiu {} kWh de {} a {}'.format(
-            cons.energy.iloc[0], start_date, end_date)
+            round(cons.energy.sum(), 2), start_date, end_date)
         response['fulfillmentText'] = fulfillmentText
         response['fulfillmentMessages'][2]['text']['text'][0] = fulfillmentText
         response['fulfillmentMessages'][3]['simpleResponses']['simpleResponses'][0]['textToSpeech'] = fulfillmentText

@@ -135,16 +135,19 @@ def qry_cons_aggr(start, end, frequency):
 
     period_days = 1
     t = -1
-    if frequency == 'W':
-        period_days = 7
-    if frequency == 'M':  # TODO: Fix monthly period
+
+    if frequency == 'M':
         periods = 0
         t = [pd.to_datetime(start)]
         while t[-1] + pd.offsets.MonthBegin(1) < pd.to_datetime(end):
             t.append(t[-1] + pd.offsets.MonthBegin(1))
             periods += 1
+        t.append(pd.to_datetime(end))
+        periods += 1
         t = pd.DatetimeIndex(t)
     else:
+        if frequency == 'W':
+            period_days = 7
         periods = (pd.to_datetime(end) -
                    pd.to_datetime(start)).days / period_days
         t = pd.date_range(start, periods=periods,
@@ -173,8 +176,14 @@ def qry_cons_aggr(start, end, frequency):
         cons.fillna(0)
 
         # Convert to kWh
-        period_hours = 24 * period_days  # TODO: fix for months
-        cons.energy = cons.energy * period_hours / 1e3
+        if frequency == 'M':
+            for i in range(aggr_cons.shape[0] - 1):
+                period_hours = (
+                    aggr_cons.t.iloc[i + 1] - aggr_cons.t.iloc[i]) / np.timedelta64(1, 'h')
+                cons.at['energy', i] = aggr_cons.energy.iloc[i] * period_hours / 1e3
+        else:
+            period_hours = 24 * period_days
+            cons.energy = cons.energy * period_hours / 1e3
 
         aggr_cons['energy'] += cons.energy
     return aggr_cons
@@ -255,7 +264,7 @@ def upload_plot_cons(cons, file_name):
 
     # Add values at the top of each bar
     rects = ax.patches
-    bar_labels = ["{:5.1f}".format(cons.iloc[i].energy)
+    bar_labels = ["{:5.0f}".format(cons.iloc[i].energy)
                   for i in range(len(rects))]
     for rect, label in zip(rects, bar_labels):
         height = rect.get_height()
