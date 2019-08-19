@@ -26,7 +26,7 @@ def qry_pot_channel(i_channel, start, end):
         end (str): end of the period as "YYYY-MM-DD hh:mm:ss".
 
     Returns:
-        pandas.DataFrame: as [index, time, consumption].
+        pandas.DataFrame: as [index, 't', 'pot'].
     """
     if i_channel < 0 or i_channel >= len(channels):
         raise Exception(
@@ -49,7 +49,7 @@ def qry_pot_aggr(start, end, frequency):
         frequency (int): Frequency of sampling, in minutes.
 
     Returns:
-        pandas.DataFrame: as [index, time, consumption].
+        pandas.DataFrame: as [index, 't', 'pot'].
     """
     periods = (pd.to_datetime(end) - pd.to_datetime(start)) / \
         np.timedelta64(1, 's') / (60 * frequency)
@@ -88,7 +88,7 @@ def qry_cons_channel(i_channel, start, end, frequency):
         frequency (str): Period of consumption. 'D', 'W', or 'M' (daily, weekly or monthly).
 
     Returns:
-        pandas.DataFrame: as [index, date, consumption].
+        pandas.DataFrame: as [index, 't', 'energy'].
     """
     if i_channel < 0 or i_channel >= len(channels):
         raise Exception(
@@ -130,7 +130,7 @@ def qry_cons_aggr(start, end, frequency):
         frequency (str): Period of consumption. 'D', 'W', or 'M' (daily, weekly or monthly).
 
     Returns:
-        pandas.DataFrame: as [index, date, consumption].
+        pandas.DataFrame: as [index, 't', 'energy'].
     """
 
     period_days = 1
