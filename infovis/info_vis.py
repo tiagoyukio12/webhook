@@ -275,4 +275,4 @@ def upload_plot_cons(cons, file_name):
     cloudinary.uploader.upload(
         './app/' + file_name + '.png', public_id=file_name)
 
-    return cloudinary.utils.cloudinary_url(file_name)[0]
+    return cloudinary.utils.cloudinary_url(file_name, secure=True)[0]

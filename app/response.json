@@ -1,24 +1,17 @@
 {
-    "fulfillmentText": "IMAGEM",
+    "fulfillmentText": "Você consumiu...",
     "fulfillmentMessages": [
-        {
-            "image": {
-                "imageUri": "https://res.cloudinary.com/dqmfcku4a/image/upload/plot.png"
-            }
-        },
-        {
-            "image": {
-                "imageUri": "https://res.cloudinary.com/dqmfcku4a/image/upload/plot.png"
-            },
-            "platform": "FACEBOOK"
-        },
         {
             "text": {
                 "text": [
                     "Você consumiu..."
                 ]
-            },
-            "platform": "FACEBOOK"
+            }
+        },
+        {
+            "image": {
+                "imageUri": "https://res.cloudinary.com/dqmfcku4a/image/upload/plot.png"
+            }
         },
         {
             "platform": "ACTIONS_ON_GOOGLE",
@@ -53,16 +46,56 @@
             }
         },
         {
-            "image": {
-                "imageUri": "https://res.cloudinary.com/dqmfcku4a/image/upload/plot.png"
-            },
-            "platform": "LINE"
-        },
-        {
             "text": {
                 "text": [
                     "Você consumiu..."
                 ]
+            },
+            "platform": "LINE"
+        },
+        {
+            "image": {
+                "imageUri": "https://bb5dfa9b.ngrok.io/media?file=consbe9a1df7-ed54-4050-8c14-0712567f7f09-ee1dc704.png"
+            },
+            "platform": "LINE"
+        },
+        {
+            "payload": {
+                "line": {
+                    "type": "template",
+                    "template": {
+                        "defaultAction": {
+                            "type": "uri",
+                            "uri": "http://example.com/page/123",
+                            "label": "View detail"
+                        },
+                        "type": "buttons",
+                        "text": "Escolha uma opção",
+                        "actions": [
+                            {
+                                "data": "action=buy&itemid=123",
+                                "type": "postback",
+                                "label": "Como economizar"
+                            },
+                            {
+                                "data": "action=add&itemid=123",
+                                "type": "postback",
+                                "label": "Predição de consumo"
+                            },
+                            {
+                                "type": "uri",
+                                "uri": "http://example.com/page/123",
+                                "label": "Ver detalhes"
+                            }
+                        ],
+                        "thumbnailImageUrl": "https://images.justlanded.com/event_images/Tets/photo/events_original_45195_42919.jpg",
+                        "title": "Consumo",
+                        "imageBackgroundColor": "#FFFFFF",
+                        "imageSize": "cover",
+                        "imageAspectRatio": "rectangle"
+                    },
+                    "altText": "This is a buttons template"
+                }
             },
             "platform": "LINE"
         }

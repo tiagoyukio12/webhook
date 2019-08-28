@@ -1,7 +1,7 @@
+import json
 from flask import request, jsonify, send_file
 from app import app
 from infovis import info_vis
-import json
 
 
 @app.route('/', methods=['POST'])
@@ -33,16 +33,15 @@ def post():
         fulfillmentText = 'Você consumiu {} kWh de {} a {}'.format(
             round(cons.energy.sum(), 2), start_date, end_date)
         response['fulfillmentText'] = fulfillmentText
-        response['fulfillmentMessages'][2]['text']['text'][0] = fulfillmentText
-        response['fulfillmentMessages'][3]['simpleResponses']['simpleResponses'][0]['textToSpeech'] = fulfillmentText
-        response['fulfillmentMessages'][7]['text']['text'][0] = fulfillmentText
+        response['fulfillmentMessages'][0]['text']['text'][0] = fulfillmentText
+        response['fulfillmentMessages'][2]['simpleResponses']['simpleResponses'][0]['textToSpeech'] = fulfillmentText
+        response['fulfillmentMessages'][5]['text']['text'][0] = fulfillmentText
 
         # Create media file url
-        response['fulfillmentMessages'][0]['image']['imageUri'] = url
         response['fulfillmentMessages'][1]['image']['imageUri'] = url
-        response['fulfillmentMessages'][4]['basicCard']['image']['imageUri'] = url
-        # TODO: try ngrok http link for Line
-        response['fulfillmentMessages'][6]['image']['imageUri'] = url
+        # response['fulfillmentMessages'][1]['image']['imageUri'] = url
+        response['fulfillmentMessages'][3]['basicCard']['image']['imageUri'] = url
+        response['fulfillmentMessages'][7]['payload']['line']['template']['thumbnailImageUrl'] = url
 
         return jsonify(response)
 
