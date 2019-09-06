@@ -142,9 +142,9 @@ def qry_cons_aggr(start, end, frequency):
         while t[-1] + pd.offsets.MonthBegin(1) < pd.to_datetime(end):
             t.append(t[-1] + pd.offsets.MonthBegin(1))
             periods += 1
-        t.append(pd.to_datetime(end))
-        periods += 1
-        t = pd.DatetimeIndex(t)
+            t.append(pd.to_datetime(end))
+            periods += 1
+            t = pd.DatetimeIndex(t)
     else:
         if frequency == 'W':
             period_days = 7
@@ -180,7 +180,8 @@ def qry_cons_aggr(start, end, frequency):
             for i in range(aggr_cons.shape[0] - 1):
                 period_hours = (
                     aggr_cons.t.iloc[i + 1] - aggr_cons.t.iloc[i]) / np.timedelta64(1, 'h')
-                cons.at['energy', i] = aggr_cons.energy.iloc[i] * period_hours / 1e3
+                cons.at['energy', i] = aggr_cons.energy.iloc[i] * \
+                    period_hours / 1e3
         else:
             period_hours = 24 * period_days
             cons.energy = cons.energy * period_hours / 1e3
@@ -270,7 +271,7 @@ def upload_plot_cons(cons, file_name):
         height = rect.get_height()
         ax.text(rect.get_x() + rect.get_width() * 0.43, height * 0.93, label,
                 ha='center', va='bottom', weight='bold')
-    #fig.set_size_inches(12, 6)
+    # fig.set_size_inches(12, 6)
     plt.savefig('./app/' + file_name + '.png')
     cloudinary.uploader.upload(
         './app/' + file_name + '.png', public_id=file_name)
