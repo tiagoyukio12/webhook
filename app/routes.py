@@ -3,8 +3,9 @@ import json
 from datetime import date
 from flask import request, jsonify, send_file
 from app import app
-from infovis import info_vis
+from datetime import datetime, timedelta
 from forecast import forecast
+from infovis import info_vis
 
 
 @app.route('/', methods=['POST'])
@@ -18,7 +19,8 @@ def post():
         if data['queryResult']['parameters']['date'] != '':
             # Parameter received is a specific date
             start_date = format_date(data['queryResult']['parameters']['date'])
-            end_date = start_date + 1  # TODO: increment string by 1 day
+            end_date = (datetime.strptime(start_date[:10], '%Y-%m-%d') + timedelta(days=1)).strftime('%Y-%m-%d')
+
         else:
             # Parameter received is a period
             start_date = format_date(
@@ -53,7 +55,6 @@ def post():
         today = date.today()
         start_date = format_date(today.strftime("%Y-%m-%d"))
         print(start_date)
-        print('asdad')
         end_date = format_date(data['queryResult']['parameters']['date-time']['endDate'])
 
         cons = info_vis.qry_cons_aggr('2016-01-01', start_date, 'M')
