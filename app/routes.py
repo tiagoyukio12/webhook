@@ -1,11 +1,16 @@
 import json
-
-from datetime import date
+from datetime import date, datetime, timedelta
+import blynklib
 from flask import request, jsonify, send_file
 from app import app
-from datetime import datetime, timedelta
 from forecast import forecast
 from infovis import info_vis
+
+
+# initialize blynk
+BLYNK_AUTH = '4sYLFkG0xPGFOua7JKBTkpNSbTzcyATe'
+blynk = blynklib.Blynk(BLYNK_AUTH)
+blynk.run()
 
 
 @app.route('/', methods=['POST'])
@@ -49,12 +54,14 @@ def post():
         response['fulfillmentMessages'][3]['basicCard']['image']['imageUri'] = url
         response['fulfillmentMessages'][7]['payload']['line']['template']['thumbnailImageUrl'] = url
 
+        tv_status = 0
+        blynk.virtual_write(11, tv_status)
+
         return jsonify(response)
 
     if intent == 'Predicao':
         today = date.today()
         start_date = format_date(today.strftime("%Y-%m-%d"))
-        print(start_date)
         end_date = format_date(data['queryResult']['parameters']['date-time']['endDate'])
 
         cons = info_vis.qry_cons_aggr('2016-01-01', start_date, 'M')
@@ -78,9 +85,9 @@ def post():
         response['fulfillmentMessages'][0]['text']['text'][0] = fulfillment_text
         response['fulfillmentMessages'][2]['simpleResponses']['simpleResponses'][0]['textToSpeech'] = fulfillment_text
         response['fulfillmentMessages'][5]['text']['text'][0] = fulfillment_text
-        #response['fulfillmentMessages'][1]['image']['imageUri'] = url
-        #response['fulfillmentMessages'][3]['basicCard']['image']['imageUri'] = url
-        #response['fulfillmentMessages'][7]['payload']['line']['template']['thumbnailImageUrl'] = url
+
+        tv_status = 1
+        blynk.virtual_write(11, tv_status)
 
         return jsonify(response)
 
