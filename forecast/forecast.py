@@ -1,4 +1,5 @@
 import csv
+import calendar
 import datetime
 import operator
 import os
@@ -7,6 +8,14 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
 import pandas as pd
+
+import cloudinary
+import cloudinary.uploader
+cloudinary.config(
+    cloud_name='dqmfcku4a',
+    api_key='986962262222677',
+    api_secret='lbTxe9ZAZsbVZJjfLJ_TgJla4aQ'
+)
 
 from load_house import load_house
 
@@ -29,26 +38,54 @@ if not os.path.exists('plot/ARIMA'):
     os.makedirs('plot/ARIMA')
 
 
-def qry_ARIMA(days_predicted, pdq):
+def qry_ARIMA(cons, start_date, end_date, pdq):
     """Runs a query for the forecast consumption using an ARIMA model.
 
     Args:
-        days_predicted (int): number of days to forecast.
+        cons (pandas.DataFrame): [index, date, consumption] DataFrame of past consumption.
+        start_date (str): YYYY-MM-DD date of the forecast period's start.
+        end_date (str): YYYY-MM-DD date of the forecast period's end.
         pdq (iterable): order of the model parameters.
 
     Returns:
-        str: csv of the query as [index, date, daily forecasted consumption].
+        pandas.DataFrame: forecasted consumption as ['t', 'energy'].
     """
-    model = ARIMA(test.energy, pdq)
+    model = ARIMA(cons.energy, pdq)
+    start_date = pd.to_datetime(start_date)
+    end_date = pd.to_datetime(end_date)
+    days_predicted = int((end_date - start_date) / np.timedelta64(1,'D'))
     model_fit = model.fit(disp=0)
-    predicted = model_fit.forecast(days_predicted)
-
-    # Add daily consumption of current day
-    predict_cons = np.insert(predicted[0], 0, test.energy.iloc[-1])
-
-    # Convert to pandas.DataFrame
-    result = pd.DataFrame(np.transpose(
-        [np.insert(validation.t.values, 0, test.t.iloc[-1]), predict_cons]))
+    predict_cons = model_fit.forecast(days_predicted)[0]
+    
+    date_list = [start_date + datetime.timedelta(days=x) for x in range(days_predicted)]
+    result = pd.DataFrame([date_list, predict_cons]).transpose()
     result.columns = ['t', 'energy']
 
-    return result.to_csv()
+    return result
+
+    
+def upload_plot_cons(cons, predict_cons, file_name):
+    """Plots a bar chart, saves as png file, and uploads to Cloudinary as file_name.
+
+    Args:
+        cons (pandas.DataFrame): [index, date, consumption] DataFrame to be plotted.
+        predict_cons (pandas.DataFrame): [index, date, consumption] DataFrame to be plotted.
+        file_name (str): name of the file to be uploaded.
+
+    Returns:
+        str: url of the Cloudinary image uploaded.
+    """
+    # Plot query results
+    fig, ax = plt.subplots()
+    plt.bar(cons.t, cons.energy, width=0.9, color='lightgreen')
+    plt.bar(predict_cons.t, predict_cons.energy, width=0.9, color='lightblue')
+    plt.ylabel('Consumo [kWh]')
+    ax.set_yticklabels([])  # hide tick labels
+    ax.tick_params(axis=u'both', which=u'both', length=0)  # hide tick marks
+    plt.margins(x=0)  # remove white space
+
+    plt.savefig('./app/' + file_name + '.png')
+    cloudinary.uploader.upload(
+        './app/' + file_name + '.png', public_id=file_name)
+
+    return cloudinary.utils.cloudinary_url(file_name, secure=True)[0]
