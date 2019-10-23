@@ -1,7 +1,7 @@
 import json
 from datetime import date, datetime, timedelta
 import blynklib
-from flask import request, jsonify, send_file
+from flask import request, jsonify
 from app import app
 from forecast import forecast
 from infovis import info_vis
@@ -33,6 +33,22 @@ def post():
         update_blynk(0)
         return jsonify(response)
 
+    if intent == 'Consumo Individual':
+        # Get start and end dates
+        if data['queryResult']['parameters']['date-time'] != '':
+            # TODO: se query for "quanto consumi hoje?"
+            # Parameter received is a period
+            start_date = format_date(data['queryResult']['parameters']['date-time']['startDate'])
+            end_date = format_date(data['queryResult']['parameters']['date-time']['endDate'])
+        else:
+            # No date-time parameter received. Use month consumption
+            start_date = format_date(datetime.today().replace(day=1).strftime('%Y-%m-%d'))
+            end_date = format_date(datetime.today().strftime('%Y-%m-%d'))
+
+        response = qry_ind_cons(start_date, end_date, data['responseId'])
+        update_blynk(1)
+        return jsonify(response)
+
     if intent == 'Predicao':
         # Get start and end dates
         today = date.today()
@@ -40,22 +56,36 @@ def post():
         end_date = format_date(data['queryResult']['parameters']['date-time']['endDate'])
 
         response = qry_forecast(start_date, end_date, data['responseId'])
-        update_blynk(1)
+        update_blynk(2)
         return jsonify(response)
 
     if intent == 'Sugestoes':
         return -1
 
 
-def qry_cons(start_date, end_date, responseId):
+def qry_cons(start_date, end_date, response_id):
     # TODO: get frequency (D, W, M) depending on period length
     cons = info_vis.qry_cons_aggr(start_date, end_date, 'M')
 
     # TODO: beautify date to "22/04/2019 or April, 22, 2019"
     txt = 'Você consumiu {} kWh de {} a {}'.format(
         round(cons.energy.sum(), 2), start_date, end_date)
-    plot_name = 'cons' + responseId
+    plot_name = 'cons' + response_id
     img_url = info_vis.upload_plot_cons(cons, plot_name)
+
+    # Load json response
+    response = jsonify_response(txt, img_url)
+    return response
+
+
+def qry_ind_cons(start_date, end_date, response_id):
+    sorted_cons = info_vis.qry_total_cons_all(start_date, end_date,
+                                              percentage=False)
+
+    txt = 'O aparelho que mais consumiu foi {}, gastando {} kWh.'.format(
+        sorted_cons[0][0], round(sorted_cons[1][0], 2))
+    plot_name = 'ind_cons' + response_id
+    img_url = info_vis.upload_plot_ind_cons(sorted_cons, plot_name)
 
     # Load json response
     response = jsonify_response(txt, img_url)
@@ -122,6 +152,7 @@ def update_blynk(tv_status):
     """Updates blynk V11 pin value to tv_status.
 
     Args:
-        tv_status (int): 0 for consumption and 1 for forecast.
+        tv_status (int): 0 for consumption, 1 for individual consumption, and
+            2 for forecast.
     """
     blynk.virtual_write(11, tv_status)

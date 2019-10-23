@@ -1,12 +1,14 @@
-from load_house import load_house
-import pandas as pd
+import calendar
+import operator
+
 import matplotlib.pyplot as plt
 import numpy as np
-import operator
-import calendar
-
+import pandas as pd
 import cloudinary
 import cloudinary.uploader
+
+from load_house import load_house
+
 cloudinary.config(
     cloud_name='dqmfcku4a',
     api_key='986962262222677',
@@ -14,7 +16,7 @@ cloudinary.config(
 )
 
 
-channels, labels = load_house.SMART('2016')
+CHANNELS, LABELS = load_house.SMART('2016')
 
 
 def qry_pot_channel(i_channel, start, end):
@@ -28,14 +30,15 @@ def qry_pot_channel(i_channel, start, end):
     Returns:
         pandas.DataFrame: as [index, 't', 'pot'].
     """
-    if i_channel < 0 or i_channel >= len(channels):
+    if i_channel < 0 or i_channel >= len(CHANNELS):
         raise Exception(
-            'Channel number should be 0-{}. The value was {}'.format(len(labels) - 1, i_channel))
+            'Channel number should be 0-{}. The value was {}'.format(
+                len(LABELS) - 1, i_channel))
 
     # Select the desired period from channel
-    ch = channels[i_channel]
-    mask = (ch.t >= start) & (ch.t < end)
-    ch_period = ch.loc[mask]
+    channel = CHANNELS[i_channel]
+    mask = (channel.t >= start) & (channel.t < end)
+    ch_period = channel.loc[mask]
 
     return ch_period
 
@@ -61,11 +64,10 @@ def qry_pot_aggr(start, end, frequency):
     aggr_pot.pot = 0
     aggr_pot.index = aggr_pot.t
 
-    for i in range(len(channels)):
+    for i, channel in enumerate(CHANNELS):
         # Select the desired period from channel
-        ch = channels[i]
-        mask = (ch.t >= start) & (ch.t < end)
-        ch_period = ch.loc[mask].copy()
+        mask = (channel.t >= start) & (channel.t < end)
+        ch_period = channel.loc[mask].copy()
 
         # Convert to desired sampling
         ch_period.index = ch_period.t
@@ -90,14 +92,14 @@ def qry_cons_channel(i_channel, start, end, frequency):
     Returns:
         pandas.DataFrame: as [index, 't', 'energy'].
     """
-    if i_channel < 0 or i_channel >= len(channels):
+    if i_channel < 0 or i_channel >= len(CHANNELS):
         raise Exception(
-            'Channel number should be 1-{}. The value was {}'.format(len(labels), i_channel))
+            'Channel number should be 1-{}. The value was {}'.format(len(LABELS), i_channel))
 
     # Select the desired period from channel
-    ch = channels[i_channel]
-    mask = (ch.t >= start) & (ch.t < end)
-    ch_period = ch.loc[mask]
+    channel = CHANNELS[i_channel]
+    mask = (channel.t >= start) & (channel.t < end)
+    ch_period = channel.loc[mask]
 
     # Find mean consumption by day, week, or month
     cons = ch_period.copy()
@@ -159,9 +161,9 @@ def qry_cons_aggr(start, end, frequency):
     aggr_cons.t = pd.to_datetime(aggr_cons.t)
     aggr_cons.energy = 0
 
-    for i_channel in range(len(channels)):
+    for i_channel in range(len(CHANNELS)):
         # Select the desired period from channel
-        ch = channels[i_channel]
+        ch = CHANNELS[i_channel]
         mask = (ch.t >= start) & (ch.t < end)
         ch_period = ch.loc[mask]
 
@@ -202,11 +204,10 @@ def qry_total_cons_all(start, end, percentage=False):
         list: each element is a list of 2 elements [label (str); total consumption (float)].
     """
     total_cons = {}
-    for i in range(0, len(channels)):
+    for i, channel in enumerate(CHANNELS):
         # Select the desired period from channel
-        ch = channels[i]
-        mask = (ch.t >= start) & (ch.t < end)
-        ch_period = ch.loc[mask]
+        mask = (channel.t >= start) & (channel.t < end)
+        ch_period = channel.loc[mask]
 
         # Find mean consumption
         cons = ch_period.pot.mean()
@@ -217,7 +218,7 @@ def qry_total_cons_all(start, end, percentage=False):
         cons *= pd.Timedelta(t2 - t1).total_seconds() / (1e3 * 3600)
 
         # Add total consumption of channel i to hash map
-        appliance_name = labels.iloc[i]['name']
+        appliance_name = LABELS.iloc[i]['name']
         if appliance_name != 'mains':
             if appliance_name not in total_cons:
                 total_cons[appliance_name] = cons
@@ -226,12 +227,12 @@ def qry_total_cons_all(start, end, percentage=False):
                            '_1'] = total_cons.pop(appliance_name)
                 total_cons[appliance_name + '_2'] = cons
 
-    if percentage == True:
-        sum = 0
+    if percentage:
+        sum_cons = 0
         for key, value in total_cons.items():
-            sum += value
+            sum_cons += value
         for key, value in total_cons.items():
-            total_cons[key] /= sum
+            total_cons[key] /= sum_cons
 
     sorted_tuples = sorted(
         total_cons.items(), key=operator.itemgetter(1), reverse=True)
@@ -272,6 +273,55 @@ def upload_plot_cons(cons, file_name):
         ax.text(rect.get_x() + rect.get_width() * 0.43, height * 0.93, label,
                 ha='center', va='bottom', weight='bold')
     # fig.set_size_inches(12, 6)
+    plt.savefig('./app/' + file_name + '.png')
+    cloudinary.uploader.upload(
+        './app/' + file_name + '.png', public_id=file_name)
+
+    return cloudinary.utils.cloudinary_url(file_name, secure=True)[0]
+
+
+def upload_plot_ind_cons(sorted_cons, file_name):
+    """Plots a pie chart of cons, saves as png file, and uploads to Cloudinary as file_name.
+
+    Args:
+        sorted_cons (list): each element is a list of 2 elements [label (str); total consumption (float)].
+        file_name (str): name of the file to be uploaded.
+
+    Returns:
+        str: url of the Cloudinary image uploaded.
+    """
+    max_channels = 8
+    sum_others = 0
+    for i in range(max_channels, len(sorted_cons[1])):
+        sum_others += sorted_cons[1][i]
+
+    sorted_cons[0] = sorted_cons[0][:max_channels] + ['Outros']
+    sorted_cons[1] = sorted_cons[1][:max_channels] + [sum_others]
+
+    cmap = plt.cm.Accent
+    colors = cmap(np.linspace(0., 1., len(sorted_cons[0])))
+
+    fig1, ax1 = plt.subplots()
+
+    explode = [0.05] * (max_channels + 1)
+
+    def autopct_format(values):
+        def my_format(pct):
+            total = sum(values)
+            val = int(round(pct*total/100.0))
+            return '{v:d}'.format(v=val)
+        return my_format
+
+    ax1.pie(sorted_cons[:][1], labels=sorted_cons[0], startangle=90,
+            counterclock=False, autopct=autopct_format(sorted_cons[:][1]),
+            colors=colors, pctdistance=0.85, explode=explode)
+
+    centre_circle = plt.Circle((0, 0), 0.70, fc='white')
+    fig = plt.gcf()
+    fig.gca().add_artist(centre_circle)
+    ax1.axis('equal')
+    plt.tight_layout()
+    fig.set_size_inches(12, 6)
     plt.savefig('./app/' + file_name + '.png')
     cloudinary.uploader.upload(
         './app/' + file_name + '.png', public_id=file_name)
