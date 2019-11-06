@@ -23,7 +23,7 @@ def post():
         if data['queryResult']['parameters']['date'] != '':
             # Parameter received is a specific date
             start_date = format_date(data['queryResult']['parameters']['date'])
-            end_date = (datetime.strptime(start_date[:10], '%Y-%m-%d') + timedelta(days=1)).strftime('%Y-%m-%d')
+            end_date = (datetime.strptime(start_date[:10], '%Y-%m-%d') + timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')
         else:
             # Parameter received is a period
             start_date = format_date(data['queryResult']['parameters']['date-period']['startDate'])
@@ -64,21 +64,28 @@ def post():
 
 
 def qry_cons(start_date, end_date, response_id):
-    # TODO: get frequency (D, W, M) depending on period length
-    cons = info_vis.qry_cons_aggr(start_date, end_date, 'M')
+    date_format = '%Y-%m-%d %H:%M:%S'
+    period = datetime.strptime(end_date, date_format) - datetime.strptime(start_date, date_format)
+    frequency = 'D'
+    if period > timedelta(days=90):
+        frequency = 'M'
+    elif period > timedelta(weeks=3):
+        frequency = 'W'
+    
+    cons = info_vis.qry_cons_aggr(start_date, end_date, frequency)
 
     # TODO: beautify date to "22/04/2019 or April, 22, 2019"
     txt = 'Você consumiu {} kWh de {} a {}'.format(
         round(cons.energy.sum(), 2), start_date, end_date)
     plot_name = 'cons' + response_id
-    img_url = info_vis.upload_plot_cons(cons, plot_name)
+    img_url = info_vis.upload_plot_cons(cons, frequency, plot_name)
 
     # Load json response
     response = jsonify_response(txt, img_url)
     return response
 
 
-def qry_ind_cons(start_date, end_date, response_id):
+def qry_ind_cons(start_date, end_date, response_id):    
     sorted_cons = info_vis.qry_total_cons_all(start_date, end_date,
                                               percentage=False)
 
@@ -93,7 +100,6 @@ def qry_ind_cons(start_date, end_date, response_id):
 
 
 def qry_forecast(start_date, end_date, responseId):
-    # TODO: get frequency (D, W, M) depending on period length
     cons = info_vis.qry_cons_aggr('2016-08-01', start_date, 'D')
 
     # TODO: use non-linear model instead of ARIMA

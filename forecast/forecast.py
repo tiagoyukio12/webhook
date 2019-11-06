@@ -5,6 +5,7 @@ import operator
 import os
 
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import matplotlib as mpl
 import numpy as np
 import pandas as pd
@@ -83,6 +84,8 @@ def upload_plot_cons(cons, predict_cons, file_name):
     ax.set_yticklabels([])  # hide tick labels
     ax.tick_params(axis=u'both', which=u'both', length=0)  # hide tick marks
     plt.margins(x=0)  # remove white space
+    plt.xticks(rotation='vertical')
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %d'))
 
     plt.savefig('./app/' + file_name + '.png')
     cloudinary.uploader.upload(

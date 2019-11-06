@@ -2,6 +2,7 @@ import calendar
 import operator
 
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import numpy as np
 import pandas as pd
 import cloudinary
@@ -144,16 +145,19 @@ def qry_cons_aggr(start, end, frequency):
         while t[-1] + pd.offsets.MonthBegin(1) < pd.to_datetime(end):
             t.append(t[-1] + pd.offsets.MonthBegin(1))
             periods += 1
-            t.append(pd.to_datetime(end))
-            periods += 1
-            t = pd.DatetimeIndex(t)
-    else:
-        if frequency == 'W':
-            period_days = 7
+        t.append(pd.to_datetime(end))
+        periods += 1
+        t = pd.DatetimeIndex(t)
+    elif frequency == 'W':
+        period_days = 7
         periods = (pd.to_datetime(end) -
                    pd.to_datetime(start)).days / period_days
+        t = pd.date_range(start, periods=periods, freq='W')
+    else:
+        periods = (pd.to_datetime(end) -
+                   pd.to_datetime(start)).days / period_days + 1
         t = pd.date_range(start, periods=periods,
-                          freq='{}D'.format(period_days))
+                          freq='D')
 
     cons = pd.DataFrame(0, index=np.arange(periods), columns=['cons'])
     aggr_cons = pd.DataFrame([t, cons]).transpose()
@@ -189,6 +193,7 @@ def qry_cons_aggr(start, end, frequency):
             cons.energy = cons.energy * period_hours / 1e3
 
         aggr_cons['energy'] += cons.energy
+    
     return aggr_cons
 
 
@@ -244,21 +249,28 @@ def qry_total_cons_all(start, end, percentage=False):
     return sorted_list
 
 
-def upload_plot_cons(cons, file_name):
+def upload_plot_cons(cons, frequency, file_name):
     """Plots a bar chart of cons, saves as png file, and uploads to Cloudinary as file_name.
 
     Args:
         cons (pandas.DataFrame): [index, date, consumption] DataFrame to be plotted.
+        frequency (str): Period of consumption. 'D', 'W', or 'M' (daily, weekly or monthly).
         file_name (str): name of the file to be uploaded.
 
     Returns:
         str: url of the Cloudinary image uploaded.
     """
     # Plot query results
+    # TODO: fix daily consumption query plot
     fig, ax = plt.subplots()
-    month_names = cons.t.dt.month.apply(
-        lambda x: calendar.month_abbr[x])  # convert month numbers to names
-    plt.bar(month_names, cons.energy, width=0.9, color='lightgreen')
+    if frequency == 'M':
+        month_names = cons.t.dt.month.apply(
+            lambda x: calendar.month_abbr[x])  # convert month numbers to names
+        plt.bar(month_names, cons.energy, width=0.9, color='lightgreen')
+    else:
+        plt.bar(cons.t, cons.energy, width=0.9, color='lightgreen')
+        ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %d'))
+        plt.xticks(rotation='vertical')
     plt.ylabel('Consumo [kWh]')
     ax.set_yticklabels([])  # hide tick labels
     ax.tick_params(axis=u'both', which=u'both', length=0)  # hide tick marks
@@ -272,7 +284,7 @@ def upload_plot_cons(cons, file_name):
         height = rect.get_height()
         ax.text(rect.get_x() + rect.get_width() * 0.43, height * 0.93, label,
                 ha='center', va='bottom', weight='bold')
-    # fig.set_size_inches(12, 6)
+    fig.set_size_inches(12, 6)
     plt.savefig('./app/' + file_name + '.png')
     cloudinary.uploader.upload(
         './app/' + file_name + '.png', public_id=file_name)
