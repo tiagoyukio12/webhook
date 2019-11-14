@@ -69,7 +69,7 @@ def qry_cons(start_date, end_date, response_id):
     frequency = 'D'
     if period > timedelta(days=90):
         frequency = 'M'
-    elif period > timedelta(weeks=3):
+    elif period > timedelta(weeks=5):
         frequency = 'W'
     
     cons = info_vis.qry_cons_aggr(start_date, end_date, frequency)
@@ -82,6 +82,7 @@ def qry_cons(start_date, end_date, response_id):
 
     # Load json response
     response = jsonify_response(txt, img_url)
+
     return response
 
 

@@ -282,7 +282,7 @@ def upload_plot_cons(cons, frequency, file_name):
                   for i in range(len(rects))]
     for rect, label in zip(rects, bar_labels):
         height = rect.get_height()
-        ax.text(rect.get_x() + rect.get_width() * 0.43, height * 0.93, label,
+        ax.text(rect.get_x() + rect.get_width() * 0.33, height - 1.5, label,
                 ha='center', va='bottom', weight='bold')
     fig.set_size_inches(12, 6)
     plt.savefig('./app/' + file_name + '.png')
