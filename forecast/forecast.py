@@ -51,6 +51,7 @@ def qry_ARIMA(cons, start_date, end_date, pdq):
     Returns:
         pandas.DataFrame: forecasted consumption as ['t', 'energy'].
     """
+    cons.energy.fillna(cons.energy.mean(), inplace=True)  # ARIMA doesn't work with NaN values
     model = ARIMA(cons.energy, pdq)
     start_date = pd.to_datetime(start_date)
     end_date = pd.to_datetime(end_date)
