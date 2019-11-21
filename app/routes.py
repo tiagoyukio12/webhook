@@ -30,7 +30,6 @@ def post():
             end_date = format_date(data['queryResult']['parameters']['date-period']['endDate'])
         
         response = qry_cons(start_date, end_date, data['responseId'])
-        update_blynk(0)
         return jsonify(response)
 
     if intent == 'Consumo Individual':
@@ -46,7 +45,6 @@ def post():
             end_date = format_date(datetime.today().strftime('%Y-%m-%d'))
 
         response = qry_ind_cons(start_date, end_date, data['responseId'])
-        update_blynk(1)
         return jsonify(response)
 
     if intent == 'Predicao':
@@ -55,7 +53,6 @@ def post():
         end_date = format_date(data['queryResult']['parameters']['date-time']['endDate'])
 
         response = qry_forecast(start_date, end_date, data['responseId'])
-        update_blynk(2)
         return jsonify(response)
 
     if intent == 'Sugestoes':
@@ -83,6 +80,9 @@ def qry_cons(start_date, end_date, response_id):
     plot_name = 'cons' + response_id
     img_url = info_vis.upload_plot_cons(cons, frequency, plot_name)
 
+    # Send data to Blynk
+    update_blynk(0, cons)
+
     # Load json response
     response = jsonify_response(txt, img_url)
 
@@ -97,6 +97,9 @@ def qry_ind_cons(start_date, end_date, response_id):
         sorted_cons[0][0], round(sorted_cons[1][0], 2))
     plot_name = 'ind_cons' + response_id
     img_url = info_vis.upload_plot_ind_cons(sorted_cons, plot_name)
+    
+    # Send data to Blynk
+    update_blynk(1, sorted_cons)
 
     # Load json response
     response = jsonify_response(txt, img_url)
@@ -113,6 +116,9 @@ def qry_forecast(start_date, end_date, response_id):
         round(predicted.energy.sum(), 2), start_date, end_date)
     plot_name = 'cons' + response_id
     img_url = forecast.upload_plot_cons(cons, predicted, plot_name)
+
+    # Send data to Blynk
+    update_blynk(2, cons)
 
     # Load json response
     response = jsonify_response(txt, img_url)
@@ -180,11 +186,13 @@ def format_date(date):
     return date[:10] + ' ' + date[11:19]
 
 
-def update_blynk(tv_status):
+def update_blynk(tv_status, cons):
     """Updates blynk V11 pin value to tv_status.
 
     Args:
         tv_status (int): 0 for consumption, 1 for individual consumption, and
             2 for forecast.
+        cons (pandas.DataFrame): result consumption from query
     """
     blynk.virtual_write(11, tv_status)
+    blynk.virtual_write(12, cons.to_json())
