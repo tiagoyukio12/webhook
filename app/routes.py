@@ -51,8 +51,7 @@ def post():
 
     if intent == 'Predicao':
         # Get start and end dates
-        today = date.today()
-        start_date = format_date(today.strftime("%Y-%m-%d"))
+        start_date = format_date(date.today().strftime("%Y-%m-%d"))
         end_date = format_date(data['queryResult']['parameters']['date-time']['endDate'])
 
         response = qry_forecast(start_date, end_date, data['responseId'])
@@ -60,7 +59,11 @@ def post():
         return jsonify(response)
 
     if intent == 'Sugestoes':
-        return -1
+        start_date = format_date((datetime.now() - timedelta(days=31)).strftime("%Y-%m-%d"))
+        end_date = format_date(datetime.now().strftime("%Y-%m-%d"))
+
+        response = qry_suggestion(start_date, end_date, data['responseId'])
+        return jsonify(response)
 
 
 def qry_cons(start_date, end_date, response_id):
@@ -100,7 +103,7 @@ def qry_ind_cons(start_date, end_date, response_id):
     return response
 
 
-def qry_forecast(start_date, end_date, responseId):
+def qry_forecast(start_date, end_date, response_id):
     cons = info_vis.qry_cons_aggr('2016-08-01', start_date, 'D')
 
     # TODO: use non-linear model instead of ARIMA
@@ -108,8 +111,30 @@ def qry_forecast(start_date, end_date, responseId):
 
     txt = 'Você consumirá {} kWh de {} a {}'.format(
         round(predicted.energy.sum(), 2), start_date, end_date)
-    plot_name = 'cons' + responseId
+    plot_name = 'cons' + response_id
     img_url = forecast.upload_plot_cons(cons, predicted, plot_name)
+
+    # Load json response
+    response = jsonify_response(txt, img_url)
+    return response
+
+
+def qry_suggestion(start_date, end_date, response_id):
+    sorted_cons = info_vis.qry_total_cons_all(start_date, end_date,
+                                              percentage=False)
+    villain = sorted_cons[0][0]
+    txt = '{} está consumindo acima do normal. Que tal comprar um novo?'.format(villain)
+    if villain == 'FurnaceHRV':
+        txt = 'O sistema de aquecimento foi o que mais consumiu este mês. Você deve trocar os filtros a cada 2 meses.'
+    elif villain == 'OfficeLights':
+        txt = 'Não acenda luzes durante o dia. Que tal abrir as janelas?'
+    elif villain == 'Refrigerator':
+        txt = 'A geladeira foi o aparelho que mais consumiu este mês. Lembre-se de descongelar regularmente,'
+    elif villain == 'Dryer':
+        txt = 'A secadora foi o aparelho que mais consumiu este mês. Limpe o duto de exaustão regularmente.'
+
+    plot_name = 'ind_cons' + response_id
+    img_url = info_vis.upload_plot_ind_cons(sorted_cons, plot_name)
 
     # Load json response
     response = jsonify_response(txt, img_url)
