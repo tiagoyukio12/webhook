@@ -1,32 +1,21 @@
-import csv
-import calendar
 import datetime
-import operator
 import os
-
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-import matplotlib as mpl
-import numpy as np
-import pandas as pd
 
 import cloudinary
 import cloudinary.uploader
+import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from matplotlib import rcParams
+from pandas.plotting import register_matplotlib_converters
+from statsmodels.tsa.arima_model import ARIMA
+
 cloudinary.config(
     cloud_name='dqmfcku4a',
     api_key='986962262222677',
     api_secret='lbTxe9ZAZsbVZJjfLJ_TgJla4aQ'
 )
-
-from load_house import load_house
-
-from io import StringIO
-from matplotlib import rcParams
-from pandas.plotting import register_matplotlib_converters
-from pmdarima.arima import auto_arima
-from statsmodels.tsa.arima_model import ARMA
-from statsmodels.tsa.arima_model import ARIMA
-
 
 # Don't cut xlabel when saving .fig
 rcParams.update({'figure.autolayout': True})
@@ -55,10 +44,10 @@ def qry_ARIMA(cons, start_date, end_date, pdq):
     model = ARIMA(cons.energy, pdq)
     start_date = pd.to_datetime(start_date)
     end_date = pd.to_datetime(end_date)
-    days_predicted = int((end_date - start_date) / np.timedelta64(1,'D'))
+    days_predicted = int((end_date - start_date) / np.timedelta64(1, 'D'))
     model_fit = model.fit(disp=0)
     predict_cons = model_fit.forecast(days_predicted)[0]
-    
+
     date_list = [start_date + datetime.timedelta(days=x) for x in range(days_predicted)]
     result = pd.DataFrame([date_list, predict_cons]).transpose()
     result.columns = ['t', 'energy']

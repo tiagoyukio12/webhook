@@ -1,12 +1,13 @@
 import json
 from datetime import date, datetime, timedelta
+
 import blynklib
 import serial
 from flask import request, jsonify
+
 from app import app
 from forecast import forecast
 from infovis import info_vis
-
 
 # initialize blynk
 BLYNK_AUTH = '4sYLFkG0xPGFOua7JKBTkpNSbTzcyATe'
@@ -37,7 +38,7 @@ def post():
             # Parameter received is a period
             start_date = format_date(data['queryResult']['parameters']['date-period']['startDate'])
             end_date = format_date(data['queryResult']['parameters']['date-period']['endDate'])
-        
+
         response = qry_cons(start_date, end_date, data['responseId'])
         return jsonify(response)
 
@@ -80,7 +81,7 @@ def qry_cons(start_date, end_date, response_id):
         frequency = 'M'
     elif period > timedelta(weeks=5):
         frequency = 'W'
-    
+
     cons = info_vis.qry_cons_aggr(start_date, end_date, frequency)
 
     # TODO: beautify date to "22/04/2019 or April, 22, 2019"
@@ -102,7 +103,7 @@ def qry_cons(start_date, end_date, response_id):
     return response
 
 
-def qry_ind_cons(start_date, end_date, response_id):    
+def qry_ind_cons(start_date, end_date, response_id):
     sorted_cons = info_vis.qry_total_cons_all(start_date, end_date,
                                               percentage=False)
 
@@ -110,10 +111,10 @@ def qry_ind_cons(start_date, end_date, response_id):
         sorted_cons[0][0], round(sorted_cons[1][0], 2))
     plot_name = 'ind_cons' + response_id
     img_url = info_vis.upload_plot_ind_cons(sorted_cons, plot_name)
-    
+
     # Send data to Blynk
     update_blynk(1, sorted_cons)
-    
+
     # Send to Arduino
     if ser.is_open:
         ser.write(b's')

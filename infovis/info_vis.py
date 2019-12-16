@@ -1,12 +1,12 @@
 import calendar
 import operator
 
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-import numpy as np
-import pandas as pd
 import cloudinary
 import cloudinary.uploader
+import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 
 from load_house import load_house
 
@@ -15,7 +15,6 @@ cloudinary.config(
     api_key='986962262222677',
     api_secret='lbTxe9ZAZsbVZJjfLJ_TgJla4aQ'
 )
-
 
 CHANNELS, LABELS = load_house.SMART('2016')
 
@@ -55,8 +54,7 @@ def qry_pot_aggr(start, end, frequency):
     Returns:
         pandas.DataFrame: as [index, 't', 'pot'].
     """
-    periods = (pd.to_datetime(end) - pd.to_datetime(start)) / \
-        np.timedelta64(1, 's') / (60 * frequency)
+    periods = (pd.to_datetime(end) - pd.to_datetime(start)) / np.timedelta64(1, 's') / (60 * frequency)
     t = pd.date_range(start, periods=periods, freq='{}min'.format(frequency))
     pot = pd.DataFrame(0, index=np.arange(periods), columns=['pot'])
     aggr_pot = pd.DataFrame([t, pot]).transpose()
@@ -137,7 +135,6 @@ def qry_cons_aggr(start, end, frequency):
     """
 
     period_days = 1
-    t = -1
 
     if frequency == 'M':
         periods = 0
@@ -185,15 +182,14 @@ def qry_cons_aggr(start, end, frequency):
         if frequency == 'M':
             for i in range(aggr_cons.shape[0] - 1):
                 period_hours = (
-                    aggr_cons.t.iloc[i + 1] - aggr_cons.t.iloc[i]) / np.timedelta64(1, 'h')
-                cons.at['energy', i] = aggr_cons.energy.iloc[i] * \
-                    period_hours / 1e3
+                                       aggr_cons.t.iloc[i + 1] - aggr_cons.t.iloc[i]) / np.timedelta64(1, 'h')
+                cons.at['energy', i] = aggr_cons.energy.iloc[i] * period_hours / 1e3
         else:
             period_hours = 24 * period_days
             cons.energy = cons.energy * period_hours / 1e3
 
         aggr_cons['energy'] += cons.energy
-    
+
     return aggr_cons
 
 
@@ -320,8 +316,9 @@ def upload_plot_ind_cons(sorted_cons, file_name):
     def autopct_format(values):
         def my_format(pct):
             total = sum(values)
-            val = int(round(pct*total/100.0))
+            val = int(round(pct * total / 100.0))
             return '{v:d}'.format(v=val)
+
         return my_format
 
     ax1.pie(sorted_cons[:][1], labels=sorted_cons[0], startangle=90,
