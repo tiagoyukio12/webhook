@@ -1,5 +1,6 @@
 import json
 from datetime import date, datetime, timedelta
+from multiprocessing import Process
 
 import blynklib
 import serial
@@ -9,10 +10,19 @@ from app import app
 from forecast import forecast
 from infovis import info_vis
 
-# initialize blynk
+# Initialize blynk
 BLYNK_AUTH = '4sYLFkG0xPGFOua7JKBTkpNSbTzcyATe'
 blynk = blynklib.Blynk(BLYNK_AUTH)
 blynk.run()
+
+
+def blynk_loop():
+    while True:
+        blynk.run()
+
+
+p = Process(target=blynk_loop)
+p.start()
 
 # Arduino
 ser = serial.Serial()
@@ -212,8 +222,6 @@ def update_blynk(tv_status, data):
             2 for forecast.
         data (list, pandas.DataFrame): result consumption from query
     """
-    blynk.virtual_write(11, tv_status)
-
     cons_json = ""
     if tv_status == 0:
         cons_json = data.to_json()
@@ -221,5 +229,5 @@ def update_blynk(tv_status, data):
         cons_json = json.dumps(data)
     elif tv_status == 2:
         cons_json = data[0].to_json() + data[1].to_json()
-
+    blynk.virtual_write(11, tv_status)
     blynk.virtual_write(12, cons_json)
