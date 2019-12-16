@@ -1,6 +1,7 @@
 import json
 from datetime import date, datetime, timedelta
 import blynklib
+import serial
 from flask import request, jsonify
 from app import app
 from forecast import forecast
@@ -11,6 +12,13 @@ from infovis import info_vis
 BLYNK_AUTH = '4sYLFkG0xPGFOua7JKBTkpNSbTzcyATe'
 blynk = blynklib.Blynk(BLYNK_AUTH)
 blynk.run()
+
+# Arduino
+ser = serial.Serial()
+try:
+    ser = serial.Serial('/dev/ttyUSB0', 9600)
+except Exception as error:
+    print(error)
 
 
 @app.route('/', methods=['POST'])
@@ -23,7 +31,8 @@ def post():
         if data['queryResult']['parameters']['date'] != '':
             # Parameter received is a specific date
             start_date = format_date(data['queryResult']['parameters']['date'])
-            end_date = (datetime.strptime(start_date[:10], '%Y-%m-%d') + timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')
+            end_date = (datetime.strptime(start_date[:10], '%Y-%m-%d') + timedelta(days=1)).strftime(
+                "%Y-%m-%d %H:%M:%S")
         else:
             # Parameter received is a period
             start_date = format_date(data['queryResult']['parameters']['date-period']['startDate'])
@@ -83,6 +92,10 @@ def qry_cons(start_date, end_date, response_id):
     # Send data to Blynk
     update_blynk(0, cons)
 
+    # Send to Arduino
+    if ser.is_open:
+        ser.write(b'a')
+
     # Load json response
     response = jsonify_response(txt, img_url)
 
@@ -100,6 +113,10 @@ def qry_ind_cons(start_date, end_date, response_id):
     
     # Send data to Blynk
     update_blynk(1, sorted_cons)
+    
+    # Send to Arduino
+    if ser.is_open:
+        ser.write(b's')
 
     # Load json response
     response = jsonify_response(txt, img_url)
@@ -118,7 +135,7 @@ def qry_forecast(start_date, end_date, response_id):
     img_url = forecast.upload_plot_cons(cons, predicted, plot_name)
 
     # Send data to Blynk
-    update_blynk(2, cons)
+    update_blynk(2, [cons, predicted])
 
     # Load json response
     response = jsonify_response(txt, img_url)
@@ -182,17 +199,26 @@ def format_date(date):
     Returns:
         str: YYYY-MM-DD date.
     """
-    date = date[:3] + '6' + date[4:]  # TODO: remove me
-    return date[:10] + ' ' + date[11:19]
+    formatted_date = date[:2] + '16' + date[4:]  # Use 2016 Smart Data
+    return formatted_date[:10] + ' ' + formatted_date[11:19]
 
 
-def update_blynk(tv_status, cons):
+def update_blynk(tv_status, data):
     """Updates blynk V11 pin value to tv_status.
 
     Args:
         tv_status (int): 0 for consumption, 1 for individual consumption, and
             2 for forecast.
-        cons (pandas.DataFrame): result consumption from query
+        data (list, pandas.DataFrame): result consumption from query
     """
     blynk.virtual_write(11, tv_status)
-    blynk.virtual_write(12, cons.to_json())
+
+    cons_json = ""
+    if tv_status == 0:
+        cons_json = data.to_json()
+    elif tv_status == 1:
+        cons_json = json.dumps(data)
+    elif tv_status == 2:
+        cons_json = data[0].to_json() + data[1].to_json()
+
+    blynk.virtual_write(12, cons_json)

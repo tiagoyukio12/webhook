@@ -65,7 +65,7 @@ def qry_ARIMA(cons, start_date, end_date, pdq):
 
     return result
 
-    
+
 def upload_plot_cons(cons, predict_cons, file_name):
     """Plots a bar chart, saves as png file, and uploads to Cloudinary as file_name.
 
