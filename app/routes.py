@@ -228,6 +228,9 @@ def update_blynk(tv_status, data):
     elif tv_status == 1:
         cons_json = json.dumps(data)
     elif tv_status == 2:
-        cons_json = data[0].to_json() + data[1].to_json()
+        data[0].columns = ['tHist', 'energyHist']
+        data[1].columns = ['tPred', 'energyPred']
+        cons_json = "[" + data[0].tail(30).to_json() + "," + data[1].to_json() + "]"
+    print(cons_json)
     blynk.virtual_write(11, tv_status)
     blynk.virtual_write(12, cons_json)
